@@ -416,11 +416,11 @@
             <h1>Spending Tokens</h1>
             <img id="logo" class="logo" alt="logo">
         </div>
-        <p class="subheadline">The most token-intensive Meta employee used up 328.5 billion tokens in a thirty day period with following breakdown, which we estimate would cost $7 million with public token rates*. Use the calculator below to see what different token usage might cost with different models and token types, based on published public rates.</p>
+        <p class="subheadline">The most token-intensive Meta employee used up 328.5 billion tokens in a thirty day period with following breakdown, which would cost millions with public token rates*. Use the calculator below to see what different token usage might cost with different models and token types, based on published public rates.</p>
 
         <div class="total-cost-display">
             <div class="total-cost-number" id="total-cost">$0</div>
-            <div class="total-cost-label">Estimated Total Cost</div>
+            <div class="total-cost-label">Estimated total cost with these specs</div>
         </div>
 
         <div id="cost-chart" class="scroll-fade"></div>
@@ -488,7 +488,7 @@ const MODELS = {
 // --- STATE ---
 const state = {
     totalTokens: 328_500_000_000,
-    tokenSplit: { input: 0.10, output: 0.90 },
+    tokenSplit: { input: 0.50, output: 0.50 },
     activeModels: ['claude-opus-4.6', 'claude-sonnet-4.6', 'claude-haiku-4.5', 'gpt-5', 'gemini-3.1-pro', 'gemini-3.1-flash-lite'],
     modelDist: {
         'claude-opus-4.6': 0.8647,
