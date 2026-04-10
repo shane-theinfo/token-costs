@@ -596,17 +596,15 @@ function redistributeSliders(collection, changedKey, newValue) {
 }
 
 // --- RENDER ---
-function render() {
+// Lightweight update: refreshes costs, chart, labels, slider backgrounds WITHOUT rebuilding slider DOM
+function updateDisplay() {
     const costs = calculateCosts();
-
-    // Total cost
     const totalCost = Object.values(costs).reduce((s, c) => s + c.total, 0);
     document.getElementById('total-cost').textContent = formatCurrency(totalCost);
 
     // Bar chart
     const chartEl = document.getElementById('cost-chart');
     const sorted = [...state.activeModels].sort((a, b) => costs[b].total - costs[a].total);
-
     chartEl.innerHTML = sorted.map(modelId => {
         const model = MODELS[modelId];
         const cost = costs[modelId];
@@ -620,13 +618,58 @@ function render() {
         </div>`;
     }).join('');
 
-    // Split sliders
+    // Update split slider visuals (without rebuilding)
+    const splitSlider = document.getElementById('split-slider');
+    if (splitSlider) {
+        const inputPct = state.tokenSplit.input * 100;
+        const outputPct = state.tokenSplit.output * 100;
+        splitSlider.value = inputPct;
+        splitSlider.style.background = splitSliderBg(inputPct);
+        const labels = document.querySelectorAll('#split-sliders .split-label-value');
+        if (labels.length >= 2) {
+            labels[0].textContent = inputPct.toFixed(0) + '%';
+            labels[1].textContent = outputPct.toFixed(0) + '%';
+        }
+    }
+
+    // Update model slider visuals (without rebuilding)
+    document.querySelectorAll('#model-sliders input[type=range]').forEach(slider => {
+        const modelId = slider.dataset.modelId;
+        const pct = (state.modelDist[modelId] || 0) * 100;
+        const color = getModelColor(modelId);
+        slider.value = pct;
+        slider.style.background = sliderFillBg(pct, color);
+        const valueEl = slider.closest('.model-slider-row').querySelector('.model-slider-value');
+        if (valueEl) valueEl.textContent = fmtPct(pct) + '%';
+    });
+
+    updateScrollFades();
+}
+
+// Full render: rebuilds all slider DOM and attaches listeners (used for structural changes)
+function render() {
+    const costs = calculateCosts();
+    const totalCost = Object.values(costs).reduce((s, c) => s + c.total, 0);
+    document.getElementById('total-cost').textContent = formatCurrency(totalCost);
+
+    // Bar chart
+    const chartEl = document.getElementById('cost-chart');
+    const sorted = [...state.activeModels].sort((a, b) => costs[b].total - costs[a].total);
+    chartEl.innerHTML = sorted.map(modelId => {
+        const model = MODELS[modelId];
+        const cost = costs[modelId];
+        const pct = totalCost > 0 ? (cost.total / totalCost) * 100 : 0;
+        return `<div class="bar-row">
+            <div class="bar-label">${model.name}</div>
+            <div class="bar-track">
+                <div class="bar-fill provider-${model.provider}" style="width: ${pct}%"></div>
+            </div>
+            <div class="bar-value">${formatCurrency(cost.total)}</div>
+        </div>`;
+    }).join('');
+
     renderSplitSliders();
-
-    // Model distribution sliders
     renderModelSliders();
-
-    // Update scroll fade indicators
     updateScrollFades();
 }
 
@@ -662,7 +705,7 @@ function renderSplitSliders() {
         const inputVal = parseFloat(e.target.value) / 100;
         state.tokenSplit.input = Math.min(1, Math.max(0, inputVal));
         state.tokenSplit.output = 1 - state.tokenSplit.input;
-        render();
+        updateDisplay();
     });
 }
 
@@ -695,7 +738,7 @@ function renderModelSliders() {
             const modelId = e.target.dataset.modelId;
             const newPct = parseFloat(e.target.value) / 100;
             redistributeSliders(state.modelDist, modelId, Math.min(1, Math.max(0, newPct)));
-            render();
+            updateDisplay();
         });
     });
 
