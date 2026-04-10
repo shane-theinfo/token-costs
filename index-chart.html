@@ -44,7 +44,7 @@
             font-size: 0.9rem;
             color: #333;
             line-height: 1.4;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .bottom-row {
             display: flex;
@@ -63,7 +63,7 @@
         /* Total cost display */
         .total-cost-display {
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 4px;
         }
         .total-cost-number {
             font-size: 2rem;
@@ -105,7 +105,7 @@
 
         /* Bar chart */
         #cost-chart {
-            margin-bottom: 10px;
+            margin-bottom: 6px;
             max-height: 180px;
             overflow-y: auto;
         }
@@ -151,7 +151,7 @@
         }
 
         /* Token split colors */
-        .split-input { background: #4A90D9; }
+        .split-input { background: #2A54A3; }
         .split-output { background: #F32A52; }
 
         /* Provider colors */
@@ -166,14 +166,14 @@
         /* Controls */
         .controls {
             border-top: 2px solid #333;
-            padding-top: 8px;
+            padding-top: 6px;
             flex: 1;
             min-height: 0;
             display: flex;
             flex-direction: column;
         }
         .control-group {
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             flex-shrink: 0;
         }
         .control-group.model-group {
@@ -192,10 +192,10 @@
             font-size: 11px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            line-height: 18px;
+            line-height: 16px;
         }
 
         /* Total tokens input */
@@ -229,25 +229,55 @@
         .preset-btn:hover { background: #f5f5f5; }
         .preset-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
-        /* Split slider row */
-        .split-slider-row {
+        /* Split labels + slider */
+        .split-labels-row {
             display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .split-label {
-            font-size: 12px;
-            color: #444;
-            flex-shrink: 0;
-            white-space: nowrap;
-        }
-        .split-label-value {
-            font-weight: 500;
-            color: #333;
+            justify-content: space-between;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 1px;
         }
         .split-slider-track {
             flex: 1;
             min-width: 0;
+            position: relative;
+            height: 20px;
+        }
+        .split-visual-bar {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            left: 0; right: 0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            pointer-events: none;
+        }
+        .split-seg-input { background: #2A54A3; }
+        .split-seg-cached { background: #762F8A; }
+        .split-seg-output { background: #5AC33E; }
+        .split-slider-track input[type=range] {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent !important;
+            pointer-events: none;
+            margin: 0;
+            z-index: 3;
+        }
+        .split-slider-track input[type=range]::-webkit-slider-thumb {
+            pointer-events: auto;
+        }
+        .split-slider-track input[type=range]::-moz-range-thumb {
+            pointer-events: auto;
+        }
+        .split-slider-track input[type=range]::-webkit-slider-runnable-track {
+            background: transparent;
+        }
+        .split-slider-track input[type=range]::-moz-range-track {
+            background: transparent;
         }
 
         /* Custom range slider */
@@ -394,8 +424,7 @@
             .total-tokens-row { flex-wrap: wrap; gap: 3px; }
             .preset-btn { padding: 1px 5px; font-size: 0.62rem; }
             .total-tokens-input { width: auto; height: 22px; font-size: 11px; }
-            .split-slider-row { gap: 4px; }
-            .split-label { font-size: 9px; }
+            .split-labels-row { font-size: 9px; }
             .model-slider-row { margin-bottom: 0; height: 22px; }
             .model-slider-label { width: 80px; font-size: 0.6rem; }
             .model-slider-track { margin: 0 4px; }
@@ -416,7 +445,7 @@
             <h1>Spending Tokens</h1>
             <img id="logo" class="logo" alt="logo">
         </div>
-        <p class="subheadline">The most token-intensive Meta employee used up 328.5 billion tokens in a thirty day period with following breakdown, which would cost millions with public token rates*. Use the calculator below to see what different token usage might cost with different models and token types, based on published public rates.</p>
+        <p class="subheadline">The most token-intensive Meta employee used up 328.5 billion tokens in a thirty day period with following breakdown, which could cost millions with public token rates*. Use the calculator below to see what different token usage might cost with different models and token types, based on published public rates.</p>
 
         <div class="total-cost-display">
             <div class="total-cost-number" id="total-cost">$0</div>
@@ -439,7 +468,7 @@
             </div>
 
             <div class="control-group">
-                <div class="control-group-title">Token Type Split</div>
+                <div class="control-group-title">Token Type Split (Est.)</div>
                 <div id="split-sliders"></div>
             </div>
 
@@ -463,32 +492,32 @@
 <script>
 // --- MODEL DATA ---
 const MODELS = {
-    'claude-opus-4.6':       { name: 'Claude Opus 4.6',       provider: 'anthropic', input: 5.00,  output: 25.00, reasoning: 25.00 },
-    'claude-opus-4.5':       { name: 'Claude Opus 4.5',       provider: 'anthropic', input: 5.00,  output: 25.00, reasoning: 25.00 },
-    'claude-sonnet-4.6':     { name: 'Claude Sonnet 4.6',     provider: 'anthropic', input: 3.00,  output: 15.00, reasoning: 15.00 },
-    'claude-haiku-4.5':      { name: 'Claude Haiku 4.5',      provider: 'anthropic', input: 1.00,  output: 5.00,  reasoning: 5.00 },
-    'gpt-5':                 { name: 'GPT-5',                 provider: 'openai',    input: 1.25,  output: 10.00, reasoning: 10.00 },
-    'gpt-5.4':               { name: 'GPT-5.4',               provider: 'openai',    input: 2.50,  output: 15.00, reasoning: 15.00 },
-    'gpt-4.1':               { name: 'GPT-4.1',               provider: 'openai',    input: 2.00,  output: 8.00,  reasoning: 8.00 },
-    'gpt-4.1-mini':          { name: 'GPT-4.1 Mini',          provider: 'openai',    input: 0.20,  output: 0.80,  reasoning: 0.80 },
-    'gpt-4.1-nano':          { name: 'GPT-4.1 Nano',          provider: 'openai',    input: 0.10,  output: 0.40,  reasoning: 0.40 },
-    'o3':                    { name: 'o3',                    provider: 'openai',    input: 2.00,  output: 8.00,  reasoning: 8.00 },
-    'o4-mini':               { name: 'o4-mini',               provider: 'openai',    input: 0.55,  output: 2.20,  reasoning: 2.20 },
-    'gemini-3.1-pro':        { name: 'Gemini 3.1 Pro',        provider: 'google',    input: 2.00,  output: 12.00, reasoning: 12.00 },
-    'gemini-3-flash':        { name: 'Gemini 3 Flash',        provider: 'google',    input: 0.50,  output: 3.00,  reasoning: 3.00 },
-    'gemini-3.1-flash-lite': { name: 'Gemini 3.1 Flash-Lite', provider: 'google',    input: 0.25,  output: 1.50,  reasoning: 1.50 },
-    'llama-4-maverick':      { name: 'Llama 4 Maverick',      provider: 'meta',      input: 0.15,  output: 0.60,  reasoning: 0.60 },
-    'deepseek-v3':           { name: 'DeepSeek V3',           provider: 'deepseek',  input: 0.26,  output: 0.38,  reasoning: 0.38 },
-    'deepseek-r1':           { name: 'DeepSeek R1',           provider: 'deepseek',  input: 0.55,  output: 2.00,  reasoning: 2.00 },
-    'grok-4':                { name: 'Grok 4',                provider: 'xai',       input: 3.00,  output: 15.00, reasoning: 15.00 },
-    'grok-4-fast':           { name: 'Grok 4 Fast',           provider: 'xai',       input: 0.20,  output: 0.50,  reasoning: 0.50 },
-    'mistral-large-3':       { name: 'Mistral Large 3',       provider: 'mistral',   input: 0.50,  output: 1.50,  reasoning: 1.50 },
+    'claude-opus-4.6':       { name: 'Claude Opus 4.6',       provider: 'anthropic', input: 5.00,  cached: 0.50,   output: 25.00, reasoning: 25.00 },
+    'claude-opus-4.5':       { name: 'Claude Opus 4.5',       provider: 'anthropic', input: 5.00,  cached: 0.50,   output: 25.00, reasoning: 25.00 },
+    'claude-sonnet-4.6':     { name: 'Claude Sonnet 4.6',     provider: 'anthropic', input: 3.00,  cached: 0.30,   output: 15.00, reasoning: 15.00 },
+    'claude-haiku-4.5':      { name: 'Claude Haiku 4.5',      provider: 'anthropic', input: 1.00,  cached: 0.10,   output: 5.00,  reasoning: 5.00 },
+    'gpt-5':                 { name: 'GPT-5',                 provider: 'openai',    input: 1.25,  cached: 0.625,  output: 10.00, reasoning: 10.00 },
+    'gpt-5.4':               { name: 'GPT-5.4',               provider: 'openai',    input: 2.50,  cached: 1.25,   output: 15.00, reasoning: 15.00 },
+    'gpt-4.1':               { name: 'GPT-4.1',               provider: 'openai',    input: 2.00,  cached: 1.00,   output: 8.00,  reasoning: 8.00 },
+    'gpt-4.1-mini':          { name: 'GPT-4.1 Mini',          provider: 'openai',    input: 0.20,  cached: 0.10,   output: 0.80,  reasoning: 0.80 },
+    'gpt-4.1-nano':          { name: 'GPT-4.1 Nano',          provider: 'openai',    input: 0.10,  cached: 0.05,   output: 0.40,  reasoning: 0.40 },
+    'o3':                    { name: 'o3',                    provider: 'openai',    input: 2.00,  cached: 1.00,   output: 8.00,  reasoning: 8.00 },
+    'o4-mini':               { name: 'o4-mini',               provider: 'openai',    input: 0.55,  cached: 0.275,  output: 2.20,  reasoning: 2.20 },
+    'gemini-3.1-pro':        { name: 'Gemini 3.1 Pro',        provider: 'google',    input: 2.00,  cached: 0.50,   output: 12.00, reasoning: 12.00 },
+    'gemini-3-flash':        { name: 'Gemini 3 Flash',        provider: 'google',    input: 0.50,  cached: 0.125,  output: 3.00,  reasoning: 3.00 },
+    'gemini-3.1-flash-lite': { name: 'Gemini 3.1 Flash-Lite', provider: 'google',    input: 0.25,  cached: 0.0625, output: 1.50,  reasoning: 1.50 },
+    'llama-4-maverick':      { name: 'Llama 4 Maverick',      provider: 'meta',      input: 0.15,  cached: 0.15,   output: 0.60,  reasoning: 0.60 },
+    'deepseek-v3':           { name: 'DeepSeek V3',           provider: 'deepseek',  input: 0.26,  cached: 0.026,  output: 0.38,  reasoning: 0.38 },
+    'deepseek-r1':           { name: 'DeepSeek R1',           provider: 'deepseek',  input: 0.55,  cached: 0.055,  output: 2.00,  reasoning: 2.00 },
+    'grok-4':                { name: 'Grok 4',                provider: 'xai',       input: 3.00,  cached: 3.00,   output: 15.00, reasoning: 15.00 },
+    'grok-4-fast':           { name: 'Grok 4 Fast',           provider: 'xai',       input: 0.20,  cached: 0.20,   output: 0.50,  reasoning: 0.50 },
+    'mistral-large-3':       { name: 'Mistral Large 3',       provider: 'mistral',   input: 0.50,  cached: 0.50,   output: 1.50,  reasoning: 1.50 },
 };
 
 // --- STATE ---
 const state = {
     totalTokens: 328_500_000_000,
-    tokenSplit: { input: 0.50, output: 0.50 },
+    tokenSplit: { input: 0.10, cached: 0.70, output: 0.20 },
     activeModels: ['claude-opus-4.6', 'claude-sonnet-4.6', 'claude-haiku-4.5', 'gpt-5', 'gemini-3.1-pro', 'gemini-3.1-flash-lite'],
     modelDist: {
         'claude-opus-4.6': 0.8647,
@@ -560,8 +589,9 @@ function calculateCosts() {
         const dist = state.modelDist[modelId] || 0;
         const tokens = state.totalTokens * dist;
         const inputCost = tokens * state.tokenSplit.input * model.input / 1e6;
+        const cachedCost = tokens * state.tokenSplit.cached * model.cached / 1e6;
         const outputCost = tokens * state.tokenSplit.output * model.output / 1e6;
-        costs[modelId] = { total: inputCost + outputCost, tokens };
+        costs[modelId] = { total: inputCost + cachedCost + outputCost, tokens };
     }
     return costs;
 }
@@ -619,17 +649,20 @@ function updateDisplay() {
     }).join('');
 
     // Update split slider visuals (without rebuilding)
-    const splitSlider = document.getElementById('split-slider');
-    if (splitSlider) {
+    const h1El = document.getElementById('split-handle-1');
+    const h2El = document.getElementById('split-handle-2');
+    if (h1El && h2El) {
         const inputPct = state.tokenSplit.input * 100;
+        const cachedPct = state.tokenSplit.cached * 100;
         const outputPct = state.tokenSplit.output * 100;
-        splitSlider.value = inputPct;
-        splitSlider.style.background = splitSliderBg(inputPct);
-        const labels = document.querySelectorAll('#split-sliders .split-label-value');
-        if (labels.length >= 2) {
-            labels[0].textContent = inputPct.toFixed(0) + '%';
-            labels[1].textContent = outputPct.toFixed(0) + '%';
-        }
+        h1El.value = inputPct;
+        h2El.value = inputPct + cachedPct;
+        document.getElementById('seg-input').style.width = inputPct + '%';
+        document.getElementById('seg-cached').style.width = cachedPct + '%';
+        document.getElementById('seg-output').style.width = outputPct + '%';
+        document.getElementById('split-input-lbl').textContent = fmtPct(inputPct) + '%';
+        document.getElementById('split-cached-lbl').textContent = fmtPct(cachedPct) + '%';
+        document.getElementById('split-output-lbl').textContent = fmtPct(outputPct) + '%';
     }
 
     // Update model slider visuals (without rebuilding)
@@ -692,29 +725,51 @@ document.addEventListener('scroll', (e) => {
 function renderSplitSliders() {
     const container = document.getElementById('split-sliders');
     const inputPct = state.tokenSplit.input * 100;
+    const cachedPct = state.tokenSplit.cached * 100;
     const outputPct = state.tokenSplit.output * 100;
-    container.innerHTML = `<div class="split-slider-row">
-        <div class="split-label">Input <span class="split-label-value">${inputPct.toFixed(0)}%</span></div>
-        <div class="split-slider-track">
-            <input type="range" min="0" max="100" step="0.5" value="${inputPct}" id="split-slider" style="background: ${splitSliderBg(inputPct)}">
+    const handle1 = inputPct;           // boundary between input and cached
+    const handle2 = inputPct + cachedPct; // boundary between cached and output
+
+    container.innerHTML = `<div class="split-labels-row">
+        <span style="color:#2A54A3"><span id="split-input-lbl">${fmtPct(inputPct)}%</span> Input</span>
+        <span style="color:#762F8A"><span id="split-cached-lbl">${fmtPct(cachedPct)}%</span> Cached</span>
+        <span style="color:#5AC33E"><span id="split-output-lbl">${fmtPct(outputPct)}%</span> Output</span>
+    </div>
+    <div class="split-slider-track">
+        <div class="split-visual-bar">
+            <div class="split-seg-input" id="seg-input" style="width:${inputPct}%"></div>
+            <div class="split-seg-cached" id="seg-cached" style="width:${cachedPct}%"></div>
+            <div class="split-seg-output" id="seg-output" style="width:${outputPct}%"></div>
         </div>
-        <div class="split-label"><span class="split-label-value">${outputPct.toFixed(0)}%</span> Output + Reasoning</div>
+        <input type="range" min="0" max="100" step="0.5" value="${handle1}" id="split-handle-1">
+        <input type="range" min="0" max="100" step="0.5" value="${handle2}" id="split-handle-2">
     </div>`;
 
-    document.getElementById('split-slider').addEventListener('input', (e) => {
-        const inputVal = parseFloat(e.target.value) / 100;
-        state.tokenSplit.input = Math.min(1, Math.max(0, inputVal));
-        state.tokenSplit.output = 1 - state.tokenSplit.input;
+    document.getElementById('split-handle-1').addEventListener('input', (e) => {
+        let h1 = parseFloat(e.target.value);
+        const h2 = parseFloat(document.getElementById('split-handle-2').value);
+        if (h1 > h2) h1 = h2;
+        e.target.value = h1;
+        state.tokenSplit.input = h1 / 100;
+        state.tokenSplit.cached = (h2 - h1) / 100;
+        state.tokenSplit.output = (100 - h2) / 100;
+        updateDisplay();
+    });
+
+    document.getElementById('split-handle-2').addEventListener('input', (e) => {
+        let h2 = parseFloat(e.target.value);
+        const h1 = parseFloat(document.getElementById('split-handle-1').value);
+        if (h2 < h1) h2 = h1;
+        e.target.value = h2;
+        state.tokenSplit.input = h1 / 100;
+        state.tokenSplit.cached = (h2 - h1) / 100;
+        state.tokenSplit.output = (100 - h2) / 100;
         updateDisplay();
     });
 }
 
 function sliderFillBg(pct, color) {
     return `linear-gradient(to right, ${color} 0%, ${color} ${pct}%, #f0f0f0 ${pct}%, #f0f0f0 100%)`;
-}
-
-function splitSliderBg(pct) {
-    return `linear-gradient(to right, #4A90D9 0%, #4A90D9 ${pct}%, #10A37F ${pct}%, #10A37F 100%)`;
 }
 
 function renderModelSliders() {
